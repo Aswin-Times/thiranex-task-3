@@ -107,7 +107,7 @@ export async function initializeDatabase(database: Database) {
   const passwordHash = await bcrypt.hash(adminPassword, 12);
   await database.query(
     `INSERT INTO users (id,name,email,password_hash,role) VALUES (gen_random_uuid(),'Atelier Admin',$1,$2,'admin')
-     ON CONFLICT (email) DO UPDATE SET role='admin'`, [adminEmail, passwordHash]
+     ON CONFLICT (email) DO UPDATE SET role='admin',password_hash=EXCLUDED.password_hash`, [adminEmail, passwordHash]
   );
 }
 
