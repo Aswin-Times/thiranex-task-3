@@ -1,0 +1,9 @@
+import { Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
+import { money } from '../api';
+import type { CartItem } from '../types';
+
+export function CartDrawer({ items, onClose, onQuantity, onCheckout }: { items: CartItem[]; onClose: () => void; onQuantity: (id: string, quantity: number) => void; onCheckout: () => void }) {
+  const subtotal = items.reduce((sum, item) => sum + item.product.priceCents * item.quantity, 0);
+  return <div className="drawer-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}><aside className="cart-drawer"><header><div><p className="kicker">YOUR BAG</p><h2>{items.length ? `${items.reduce((sum, item) => sum + item.quantity, 0)} items` : 'Your bag is empty'}</h2></div><button className="icon-btn" onClick={onClose}><X /></button></header>{items.length ? <><div className="cart-list">{items.map(({ product, quantity }) => <article className="cart-item" key={product.id}><img src={product.imageUrl} alt="" /><div><h3>{product.name}</h3><span>{product.category}</span><strong>{money(product.priceCents)}</strong><div className="quantity"><button onClick={() => onQuantity(product.id, quantity - 1)}>{quantity === 1 ? <Trash2 size={14} /> : <Minus size={14} />}</button><span>{quantity}</span><button disabled={quantity >= product.stock} onClick={() => onQuantity(product.id, quantity + 1)}><Plus size={14} /></button></div></div></article>)}</div><footer><div><span>Subtotal</span><strong>{money(subtotal)}</strong></div><p>Taxes and shipping calculated at checkout.</p><button className="dark-button" onClick={onCheckout}>Continue to checkout</button></footer></> : <div className="empty-cart"><span><ShoppingBag /></span><p>Considered objects, waiting to be discovered.</p><button onClick={onClose}>Continue shopping</button></div>}</aside></div>;
+}
+

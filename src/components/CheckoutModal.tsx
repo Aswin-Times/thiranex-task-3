@@ -1,0 +1,12 @@
+import { CheckCircle2, LockKeyhole, X } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { money } from '../api';
+import type { CartItem, Order, User } from '../types';
+
+export function CheckoutModal({ user, items, onClose, onCheckout }: { user: User; items: CartItem[]; onClose: () => void; onCheckout: (address: string) => Promise<Order> }) {
+  const [address, setAddress] = useState(''); const [loading, setLoading] = useState(false); const [error, setError] = useState(''); const [order, setOrder] = useState<Order | null>(null);
+  const total = items.reduce((sum, item) => sum + item.product.priceCents * item.quantity, 0);
+  async function submit(e: FormEvent) { e.preventDefault(); setLoading(true); setError(''); try { setOrder(await onCheckout(address)); } catch (err) { setError(err instanceof Error ? err.message : 'Checkout failed.'); } finally { setLoading(false); } }
+  return <div className="overlay"><section className="checkout-modal" role="dialog" aria-modal="true"><button className="modal-close" onClick={onClose}><X /></button>{order ? <div className="order-success"><CheckCircle2 /><p className="kicker">ORDER CONFIRMED</p><h2>Thank you, {user.name.split(' ')[0]}.</h2><p>Your order <strong>#{order.id.slice(0, 8).toUpperCase()}</strong> is being prepared. You can follow its progress from My orders.</p><button className="dark-button" onClick={onClose}>Continue shopping</button></div> : <><p className="kicker">SECURE CHECKOUT</p><h2>Where should we send it?</h2><div className="checkout-layout"><form onSubmit={submit}><label>Email<input value={user.email} disabled /></label><label>Shipping address<textarea required minLength={10} rows={4} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, city, state, postal code, country" /></label><div className="demo-payment"><LockKeyhole /><span><strong>Demo checkout</strong><small>No payment information is collected.</small></span></div>{error && <p className="form-error">{error}</p>}<button className="dark-button" disabled={loading}>{loading ? 'Placing order…' : `Place order · ${money(total)}`}</button></form><aside><h3>Order summary</h3>{items.map(({ product, quantity }) => <div className="checkout-line" key={product.id}><span>{product.name} × {quantity}</span><strong>{money(product.priceCents * quantity)}</strong></div>)}<div className="checkout-total"><span>Total</span><strong>{money(total)}</strong></div></aside></div></>}</section></div>;
+}
+

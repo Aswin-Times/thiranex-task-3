@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs';
 import pg, { type PoolClient, type QueryResult, type QueryResultRow } from 'pg';
+import { DataType, newDb } from 'pg-mem';
+import { randomUUID } from 'node:crypto';
 
 const { Pool } = pg;
 
@@ -10,7 +12,15 @@ export interface Database {
 
 export function createDatabase(connectionString = process.env.DATABASE_URL): Database {
   if (!connectionString) throw new Error('DATABASE_URL is required.');
-  const pool = new Pool({ connectionString, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined });
+  let pool: InstanceType<typeof Pool>;
+  if (connectionString === 'memory') {
+    const memory = newDb();
+    memory.public.registerFunction({ name: 'gen_random_uuid', returns: DataType.uuid, implementation: randomUUID, impure: true });
+    const adapter = memory.adapters.createPg();
+    pool = new adapter.Pool() as unknown as InstanceType<typeof Pool>;
+  } else {
+    pool = new Pool({ connectionString, ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined });
+  }
   return {
     query: (text, values) => pool.query(text, values),
     async transaction(work) {
